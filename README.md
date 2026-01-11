@@ -1,6 +1,6 @@
 # A-CORE:Anchor-based Context Reuse in Adaptive Batched Out-of-Distribution Vector Search
 
-This repository contains the core implementation used in the experiments of the accompanying paper (anonymous submission). It provides a complete pipeline to
+This repository contains the core implementation used in the experiments. It provides a complete pipeline to
 
 1. generate synthetic clustered queries,
 2. collect per-cluster training statistics from an HNSW index,
