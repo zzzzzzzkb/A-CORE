@@ -155,8 +155,27 @@ data/
 > | `laion.gt.10k.ibin` / `t2i.gt.10k.ibin` / `webvid.gt.10k.ibin` | 各 40 MB | ground truth |
 > | `laion_10M_roar.index` / `t2i_10M_roar.index` / `webvid_2.5M_roar.index` | — | RoarGraph 预建索引（可选） |
 >
-> 其中 LAION base（10M×512）与 t2i base（10M×200）见 RoarGraph 的 `prepare_dataset.sh`
-> 或该 Zenodo 记录的最新版本。查询统一用 CLIP ViT-B/32 文本编码器编码并 L2 归一化。
+> 查询统一用 CLIP ViT-B/32 文本编码器编码并 L2 归一化。
+
+### Text-to-Image (t2i) 数据集获取
+
+t2i-10M 是 **Yandex 的 text-to-image 数据集**（`yandex-research` ann-datasets），RoarGraph 的
+`prepare_data.sh t2i-10M` 会自动下载（参考 https://github.com/matchyc/RoarGraph）：
+
+```bash
+git clone --recursive https://github.com/matchyc/RoarGraph.git
+cd RoarGraph
+bash prepare_data.sh t2i-10M        # 下载到 ./data/t2i-10M
+```
+
+原始文件（`storage.yandexcloud.net`）：
+
+| 文件 | URL |
+|---|---|
+| base 向量（10M×200） | `https://storage.yandexcloud.net/yandex-research/ann-datasets/T2I/base.10M.fbin` |
+| 训练查询 | `https://storage.yandexcloud.net/yandex-research/ann-datasets/T2I/query.learn.50M.fbin`（取前 10M） |
+| 公开查询 | `https://storage.yandexcloud.net/yandex-research/ann-datasets/T2I/query.public.100K.fbin`（取前 10k） |
+| GT | `https://zenodo.org/records/11090378/files/t2i.gt.10k.ibin` |
 
 ### 真实数据集（TREC / WikiAnswers）与格式转换
 
