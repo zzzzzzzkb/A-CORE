@@ -1,0 +1,12 @@
+# 训练自适应配置模块（LightGBM）依赖
+numpy
+pandas
+lightgbm
+joblib
+scikit-learn
+
+# 真实 workload（TREC/WikiAnswers）预处理依赖（dataset_process/）
+# 仅在需要重新编码查询向量时安装
+torch
+open-clip-torch
+requests
