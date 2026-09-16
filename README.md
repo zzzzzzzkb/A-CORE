@@ -48,25 +48,6 @@ A-CORE/
 
 ---
 
-## 论文组件 → 代码文件对照
-
-| 论文组件 | 章节 | 对应代码 | 提交 |
-|---|---|---|---|
-| A-CORE 核心 Context Reuse | 5.1 | `src/run_acore.cpp`、`src/run_acore_online_grouping.cpp` | 必须 |
-| Centroid Context / warm-start | 5.1.2 | 同上（`WarmHierarchicalNSW` / `continueFromSnapshotL0`） | 必须 |
-| Selective-L | 5.1.2 | 同上（`--L_mode rankm/recall`） | 必须 |
-| Adaptive Configuration | 5.2 | 同上（三阶段预测器 `Πc/Πw/ΠL`） | 必须 |
-| LightGBM predictor train/inference | 5.2 | `src/train_full_conditional_and_recall_newfeat.py`（训练）；框架内 `load_from_txt`（推理） | 必须 |
-| 特征导出/增强（训练前处理） | 5.2.3 | `src/export_feature_csvs_perk.py` + `src/augment_features.cpp` | 必须 |
-| Online grouping | 5.3 / 6.3.3 | `src/projected_greedy_cluster.cpp`、`src/run_acore_online_grouping.cpp` | 必须 |
-| HNSW+A-CORE | 主实验 | `include/hnswlib/` + 框架（默认后端 HNSW） | 必须 |
-| synthetic workload generator | 6.1 | `src/make_clustered_queries5.cpp` | 必须 |
-| TREC/WikiAnswers 预处理 | real workload | `dataset_process/*.py` | 必须有脚本/说明 |
-| training-label grid search | Adaptive Config | `src/run_train_get_all_k_onlytop.cpp` | 必须 |
-| evaluation scripts | Recall@10 / QPS | `scripts/` + 各基线 wrapper | 必须 |
-| 原始大数据集本体 | — | 不上传，见「数据准备」下载/获取说明 | 说明即可 |
-
----
 
 ## 依赖
 
@@ -158,13 +139,24 @@ data/
 └── t2i-10M/{base.10M.fbin, query.public.100K.fbin}
 ```
 
-> **原始数据集本体无需上传**，只需提供获取/处理说明。三个数据集均为公开数据：
+> **原始数据集本体无需上传**，只需提供获取说明。三个数据集（t2i-10M / laion-10M / webvid-2.5M）
+> 均从 Zenodo 下载，来源自 RoarGraph 项目：
 >
-> - **LAION**：https://laion.ai （LAION-5B 子集）
-> - **WebVid**：https://github.com/m-bain/webvid
-> - **Text-to-Image (t2i)**：公开 text-to-image 检索数据集
+> **下载地址**：https://zenodo.org/records/11090378 （DOI: 10.5281/zenodo.11090378，CC BY 4.0）
 >
-> 查询统一用 CLIP ViT-B/32 文本编码器编码。
+> 该记录包含（base 向量 / 查询 / ground truth / RoarGraph 索引）：
+>
+> | 文件 | 大小 | 说明 |
+> |---|---|---|
+> | `clip.webvid.base.2.5M.fbin` | 5.1 GB | WebVid base 向量（2.5M×512） |
+> | `webvid.query.train.2.5M.fbin` | 5.1 GB | WebVid 训练查询 |
+> | `laion.query.10k.fbin` | 20.5 MB | LAION 查询（10k） |
+> | `webvid.query.10k.fbin` | 20.5 MB | WebVid 查询（10k） |
+> | `laion.gt.10k.ibin` / `t2i.gt.10k.ibin` / `webvid.gt.10k.ibin` | 各 40 MB | ground truth |
+> | `laion_10M_roar.index` / `t2i_10M_roar.index` / `webvid_2.5M_roar.index` | — | RoarGraph 预建索引（可选） |
+>
+> 其中 LAION base（10M×512）与 t2i base（10M×200）见 RoarGraph 的 `prepare_dataset.sh`
+> 或该 Zenodo 记录的最新版本。查询统一用 CLIP ViT-B/32 文本编码器编码并 L2 归一化。
 
 ### 真实数据集（TREC / WikiAnswers）与格式转换
 
