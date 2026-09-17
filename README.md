@@ -40,8 +40,7 @@ A-CORE/
 │   ├── nsg/                        # NSG（建图 + 搜索）
 │   ├── taumng/                     # τ-MNG（建图 + 搜索）
 │   ├── roargraph/                  # RoarGraph（外部依赖）
-│   ├── ngfix/                      # NGFix（外部依赖）
-│   └── faiss/                      # Faiss（外部依赖）
+│   └── ngfix/                      # NGFix（外部依赖）
 ├── third_party/                    # 小型头文件库（efanna2e / taumng / rvamana）
 └── scripts/                        # 复现脚本
 ```
@@ -75,7 +74,6 @@ pip install -r requirements.txt
 |---|---|---|
 | RoarGraph | https://github.com/matchyc/RoarGraph | `-DROARGRAPH_DIR=<path>` |
 | NGFix | https://github.com/BlindingStars/NGFix | `-DNGFIX_DIR=<path>` |
-| Faiss | https://github.com/facebookresearch/faiss | `-DFAISS_INSTALL_DIR=<install>` |
 | RVAMANA | DiskANN 的 RobustVamana | 见 `scripts/0_setup_external.sh` |
 
 未提供外部依赖时，CMake 会自动跳过对应目标，不影响核心与自包含基线构建。
@@ -96,8 +94,7 @@ make -j
 ```bash
 cmake .. -DCMAKE_BUILD_TYPE=Release \
   -DROARGRAPH_DIR=/path/to/RoarGraph \
-  -DNGFIX_DIR=/path/to/NGFix \
-  -DFAISS_INSTALL_DIR=/path/to/faiss/install
+  -DNGFIX_DIR=/path/to/NGFix
 make -j
 ```
 
@@ -107,7 +104,7 @@ make -j
   `projected_greedy_cluster`（在线分组）、`run_train_get_all_k_onlytop`、`make_clustered_queries5`
 - 基线：`run_hnsw_baseline`、`build_nsg`、`search_nsg`、`search_nsg_cluster`、
   `tming_build`、`search_mrng`、（可选）`search_roargraph_fair_base`、
-  `search_hnsw_ngfix_fair_base`、`run_faiss_baseline`
+  `search_hnsw_ngfix_fair_base`
 
 ---
 
@@ -185,7 +182,7 @@ bash prepare_data.sh t2i-10M        # 下载到 ./data/t2i-10M
 
 | 脚本 | 输入 → 输出 | 作用 |
 |---|---|---|
-| `convert_sessiontrack_to_jsonl.py` | `sessiontrack2013.xml` → `topic_queries.jsonl` | TREC SessionTrack XML 转 JSONL（按 topic 去重） |
+| `convert_sessiontrack_to_jsonl.py` | `sessiontrack2014.xml` → `topic_queries.jsonl` | TREC Session 2014 XML 转 JSONL（按 topic 去重） |
 | `encode_topic_queries_clip.py` | `topic_queries.jsonl` → `clip_topic_vectors/s1.*` | CLIP 编码 + KMeans 聚类 |
 | `build_topic_cluster_version.py` | `clip_topic_vectors/s1.*` → `clip_topic_vectors_topic/s1.*` | 严格按 topic 分簇（1 topic = 1 簇） |
 | `encode_wikianswers_clip.py` | HuggingFace WikiAnswers → `clip_wikianswers_vectors/s1.*` | 流式下载 + CLIP 编码（每行 = 1 簇） |
@@ -195,8 +192,8 @@ bash prepare_data.sh t2i-10M        # 下载到 ./data/t2i-10M
 ```bash
 cd dataset_process
 
-# ① 原始 XML → JSONL（TREC SessionTrack 2013）
-python convert_sessiontrack_to_jsonl.py          # 读 sessiontrack2013.xml，写 topic_queries.jsonl
+# ① 原始 XML → JSONL（TREC Session 2014，数据 https://trec.nist.gov/data/session2014.html）
+python convert_sessiontrack_to_jsonl.py sessiontrack2014.xml   # 读 XML，写 topic_queries.jsonl
 
 # ② CLIP 编码 + KMeans 聚类 → s1.xq.fbin / s1.labels.ibin / s1.centers.ibin
 python encode_topic_queries_clip.py \

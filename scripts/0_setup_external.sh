@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 拉取并编译外部基线依赖（RoarGraph / NGFix / Faiss / DiskANN(RVAMANA)）
+# 拉取并编译外部基线依赖（RoarGraph / NGFix / DiskANN(RVAMANA)）
 # 用法：bash scripts/0_setup_external.sh
 set -euo pipefail
 
@@ -23,13 +23,6 @@ if [ ! -d "$EXT/NGFix" ]; then
 fi
 echo "[NGFix] 编译时配置: -DNGFIX_DIR=$EXT/NGFix"
 
-# ---------------- Faiss ----------------
-if [ ! -d "$EXT/faiss" ]; then
-  echo "[Faiss] cloning ..."
-  git clone https://github.com/facebookresearch/faiss.git "$EXT/faiss"
-fi
-echo "[Faiss] 编译安装后配置: -DFAISS_INSTALL_DIR=<faiss/install>"
-
 # ---------------- DiskANN (RVAMANA) ----------------
 if [ ! -d "$EXT/DiskANN" ]; then
   echo "[DiskANN] cloning ..."
@@ -40,5 +33,5 @@ echo "[RVAMANA] 使用 DiskANN 的 RobustVamana 构建索引，见其 README"
 echo ""
 echo "安装完成后，重新配置并编译："
 echo "  cd $ROOT/build"
-echo "  cmake .. -DROARGRAPH_DIR=$EXT/RoarGraph -DNGFIX_DIR=$EXT/NGFix -DFAISS_INSTALL_DIR=<faiss-install>"
+echo "  cmake .. -DROARGRAPH_DIR=$EXT/RoarGraph -DNGFIX_DIR=$EXT/NGFix"
 echo "  make -j"

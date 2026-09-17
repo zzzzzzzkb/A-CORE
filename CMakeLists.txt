@@ -49,7 +49,6 @@ acore_add_executable(search_mrng                    baselines/taumng/search_mrng
 # ---------------------------------------------------------------------------
 # RoarGraph  : -DROARGRAPH_DIR=<roargraph 仓库根目录>
 # NGFix      : -DNGFIX_DIR=<NGFix 仓库根目录>
-# Faiss      : -DFAISS_INSTALL_DIR=<faiss install 目录>
 # ===========================================================================
 
 # --- RoarGraph ---
@@ -76,22 +75,6 @@ if(NGFIX_DIR AND EXISTS "${NGFIX_DIR}/ngfixlib/graph/hnsw_ngfix.h")
   message(STATUS "NGFix baseline: enabled (${NGFIX_DIR})")
 else()
   message(STATUS "NGFix baseline: skipped (set -DNGFIX_DIR=<path>)")
-endif()
-
-# --- Faiss ---
-set(FAISS_INSTALL_DIR "" CACHE PATH "Faiss install directory")
-if(FAISS_INSTALL_DIR AND EXISTS "${FAISS_INSTALL_DIR}/include/faiss/IndexFlat.h")
-  add_executable(run_faiss_baseline baselines/faiss/run_faiss_baseline.cpp)
-  target_include_directories(run_faiss_baseline PRIVATE "${FAISS_INSTALL_DIR}/include")
-  target_link_directories(run_faiss_baseline PRIVATE "${FAISS_INSTALL_DIR}/lib")
-  target_link_libraries(run_faiss_baseline PRIVATE faiss faiss_avx2 openblas lapack gomp pthread dl)
-  target_compile_features(run_faiss_baseline PRIVATE cxx_std_17)
-  set_target_properties(run_faiss_baseline PROPERTIES
-    INSTALL_RPATH "${FAISS_INSTALL_DIR}/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE)
-  message(STATUS "Faiss baseline: enabled (${FAISS_INSTALL_DIR})")
-else()
-  message(STATUS "Faiss baseline: skipped (set -DFAISS_INSTALL_DIR=<path>)")
 endif()
 
 # ---------------------------------------------------------------------------

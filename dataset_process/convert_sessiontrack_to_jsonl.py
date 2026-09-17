@@ -1,9 +1,12 @@
+import sys
 import xml.etree.ElementTree as ET
 import json
 from collections import OrderedDict
 from pathlib import Path
 
-xml_path = Path('sessiontrack2013.xml')
+# TREC Session 2014 数据（https://trec.nist.gov/data/session2014.html）
+# 下载后解压出 XML，作为第一个参数传入；默认读取当前目录下的 sessiontrack2014.xml
+xml_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('sessiontrack2014.xml')
 out_path = Path('topic_queries.jsonl')
 
 # Store topic metadata and preserve first-seen order per topic.

@@ -11,13 +11,13 @@ BASE_FBIN="${BASE_FBIN:-$DATA_DIR/clip-webvid-2.5M/base.2.5M.fbin}"
 echo "==== 真实数据预处理（依赖 torch / open_clip / requests，见 requirements.txt）===="
 cd "$DP"
 
-# ---------- TREC SessionTrack 2013 ----------
+# ---------- TREC Session 2014 ----------
 echo "[TREC] ① XML → JSONL"
-# 需要先下载 sessiontrack2013.xml（TREC Session Track 官方数据）放到 dataset_process/ 下
-if [ -f sessiontrack2013.xml ]; then
-  python convert_sessiontrack_to_jsonl.py
+# 需要先下载 TREC Session 2014 数据（https://trec.nist.gov/data/session2014.html）解压出 XML 放到 dataset_process/ 下
+if [ -f sessiontrack2014.xml ]; then
+  python convert_sessiontrack_to_jsonl.py sessiontrack2014.xml
 else
-  echo "[SKIP] 未找到 sessiontrack2013.xml，请先下载 TREC SessionTrack 2013 原始 XML 到 $DP/"
+  echo "[SKIP] 未找到 sessiontrack2014.xml，请先下载 TREC Session 2014 原始 XML 到 $DP/"
 fi
 
 echo "[TREC] ② CLIP 编码 + KMeans 聚类"
