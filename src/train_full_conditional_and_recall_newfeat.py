@@ -29,20 +29,14 @@ from sklearn.metrics import mean_absolute_error
 # 默认全保留；可通过命令行 --drop / --keep / --keep_file 覆盖
 DEFAULT_ABLATION_KEEP: List[str] = [
     # 基础簇与几何
-    "cluster_size", "cluster_size_log", "log1p_cluster_size",
-    "cluster_density", 
-    "cluster_radius_p50", "cluster_radius_p90", "radius_skew",
-    "dist_centroid_to_entryL0", "entry_dist_norm", "dist_centroid_top1_smallEF",
-    "overlap128_vs_256", "jaccard128_vs_256",
-    # probe 相关
-    "lid_probe256_k10", "rc_probe256_k10", "expansion2k_over_k_probe256_k10",
-    # efc 相关输入
-    "lid_k_efc", "rc_k_efc", "expand2k_over_k_efc",
-    # 由目标派生的输入
-    "log_efc", "log_efw", "efw_over_efc",
-    # 目标本身在部分 head 被当作输入
-    "efc", "ef_warm",
-    # 任务目标
+    "cluster_size", "cluster_size_log",
+    "cluster_radius_p50",
+    "dist_centroid_to_entryL0", "dist_centroid_top1_smallEF",
+    "overlap128_vs_256",
+    # 锚点上下文（anchor context）相关
+    "lid_k_efc", "expand2k_over_k_efc",
+    # 派生输入 / 目标
+    "efc", "ef_warm", "efw_over_efc",
     "recall_at_k",
 ]
 ABLATION_KEEP: List[str] = DEFAULT_ABLATION_KEEP.copy()
@@ -236,37 +230,29 @@ def main():
     df = add_derived(df)
 
     feat_base = [
-        "cluster_size","cluster_size_log","log1p_cluster_size",
-        "cluster_density","cluster_radius_p50","cluster_radius_p90","radius_skew",
-        "dist_centroid_to_entryL0","entry_dist_norm",
+        "cluster_size","cluster_size_log",
+        "cluster_radius_p50",
+        "dist_centroid_to_entryL0",
         "dist_centroid_top1_smallEF",
-        "overlap128_vs_256","jaccard128_vs_256",
+        "overlap128_vs_256",
     ]
 
     # --- 基础方向规则（通用于三头） ---
     base_rules = {
         # 难→贵：+1
         "cluster_radius_p50": +1,
-        "cluster_radius_p90": +1,
-        "radius_skew": +1,
         "dist_centroid_to_entryL0": 0,
-        "entry_dist_norm": 0,
         "dist_centroid_top1_smallEF": 0,
-        # 易→便宜：-1
-        "cluster_density": -1,
         "overlap128_vs_256": +1,
-        "jaccard128_vs_256": +1,
         # 目标更高→更贵：+1
         "recall_at_k": +1,
         # cluster_size / log 特征：难以统一判断，保持 0
         "cluster_size": 0,
         "cluster_size_log": 0,
-        "log1p_cluster_size": 0,
     }
 
     # --- A: efc ---
     feats_A_raw = feat_base + [
-        "lid_probe256_k10","rc_probe256_k10","expansion2k_over_k_probe256_k10",
         "recall_at_k",
     ]
     feats_A = apply_ablation(feats_A_raw)
@@ -275,11 +261,6 @@ def main():
     XA = df[feats_A]; yA = df["efc"].values.astype(float)
 
     rules_A = dict(base_rules)
-    rules_A.update({
-        "lid_probe256_k10": +1,
-        "rc_probe256_k10": +1,
-        "expansion2k_over_k_probe256_k10": +1,
-    })
     mono_A = build_monotone_vector(feats_A, rules_A)
 
     mA, maeA, paramsA = lgb_quantile_fit(XA, yA, alpha=args.alpha, seed=args.seed)
@@ -287,7 +268,7 @@ def main():
 
     # --- B: ef_warm ---
     feats_B_raw = feat_base + [
-        "lid_k_efc","rc_k_efc","expand2k_over_k_efc","efc","log_efc",
+        "lid_k_efc","expand2k_over_k_efc","efc",
         "recall_at_k",
     ]
     feats_B = apply_ablation(feats_B_raw)
@@ -297,9 +278,9 @@ def main():
 
     rules_B = dict(base_rules)
     rules_B.update({
-        "lid_k_efc": +1, "rc_k_efc": +1, "expand2k_over_k_efc": +1,
+        "lid_k_efc": +1, "expand2k_over_k_efc": +1,
         # 候选越多，warm 需求不应更大 → 非增
-        "efc": -1, "log_efc": -1,
+        "efc": -1,
     })
     mono_B = build_monotone_vector(feats_B, rules_B)
     mB_mono, maeB_mono, paramsB_mono = lgb_reg_fit(XB, yB, seed=args.seed, mono=mono_B, use_huber=True)
@@ -307,8 +288,8 @@ def main():
 
     # --- Rank-M: m* = L_aligned * ef_warm ---
     feats_M_raw = feat_base + [
-        "lid_k_efc","rc_k_efc","expand2k_over_k_efc",
-        "efc","ef_warm","log_efc","log_efw","efw_over_efc",
+        "lid_k_efc","expand2k_over_k_efc",
+        "efc","ef_warm","efw_over_efc",
         "recall_at_k",
     ]
     feats_M = apply_ablation(feats_M_raw)
@@ -319,10 +300,10 @@ def main():
 
     rules_M = dict(base_rules)
     rules_M.update({
-        "lid_k_efc": +1, "rc_k_efc": +1, "expand2k_over_k_efc": +1,
+        "lid_k_efc": +1, "expand2k_over_k_efc": +1,
         # m* 的“最小质量”对 efc 合理设定非增；对 ef_warm/比值不强约束（0），避免自相矛盾
-        "efc": -1, "log_efc": -1,
-        "ef_warm": 0, "log_efw": 0, "efw_over_efc": 0,
+        "efc": -1,
+        "ef_warm": 0, "efw_over_efc": 0,
     })
     mono_M = build_monotone_vector(feats_M, rules_M)
     mM_mono, maeM_mono, paramsM_mono = lgb_reg_fit(XM, yM, seed=args.seed, mono=mono_M, use_huber=True)
@@ -359,11 +340,11 @@ def main():
     meta = {
         "ablation_keep": ABLATION_KEEP,
         "features_base_all": [
-            "cluster_size","cluster_size_log","log1p_cluster_size",
-            "cluster_density","cluster_radius_p50","cluster_radius_p90","radius_skew",
-            "dist_centroid_to_entryL0","entry_dist_norm",
+            "cluster_size","cluster_size_log",
+            "cluster_radius_p50",
+            "dist_centroid_to_entryL0",
             "dist_centroid_top1_smallEF",
-            "overlap128_vs_256","jaccard128_vs_256",
+            "overlap128_vs_256",
         ],
         "features_A_used": feats_A,
         "features_B_used": feats_B,

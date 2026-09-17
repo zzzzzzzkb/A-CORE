@@ -1020,12 +1020,9 @@ int main(int argc, char** argv){
         return c;
     };
 
-    // ---- per-cluster features (base + probe256 trio) ----
+    // ---- per-cluster features (base 特征) ----
     struct ClusterFeatBundle {
-        std::vector<float> base; // 原来的 base 特征
-        float lid_probe256 = 0.f;
-        float rc_probe256  = 0.f;
-        float exp2k_over_k_probe256 = 1.f;
+        std::vector<float> base; // base 特征（6 个）
     };
 
     auto cluster_features = [&](const std::vector<idx_t>& ids, const std::vector<float>& c_vec){
@@ -1093,29 +1090,15 @@ int main(int argc, char** argv){
         std::vector<hnswlib::tableint> cand256, top256, vis256;
         hnsw.searchL0Heaps((const void*)c_vec.data(), (size_t)smallEF256, cand256, top256, vis256);
 
-        float lid, rc, exp2; compute_lid_rc_expansion_from_top(hnsw, c_vec.data(), dim, top256, 10, lid, rc, exp2);
-
-        float entry_dist_norm = (F.cluster_radius_p50 > 0.f) ? (F.dist_c_to_entryL0 / F.cluster_radius_p50) : 0.f;
-        float radius_skew     = (F.cluster_radius_p50 > 0.f) ? (F.cluster_radius_p90 / F.cluster_radius_p50) : 0.f;
-
         ClusterFeatBundle B;
         B.base = {
             F.cluster_size,
             F.cluster_size_log,
-            F.log1p_cluster_size,
-            F.cluster_density,
             F.cluster_radius_p50,
-            F.cluster_radius_p90,
-            radius_skew,
             F.dist_c_to_entryL0,
-            entry_dist_norm,
             F.dist_c_top1_smallEF,
             (float)topk_overlap_ratio_limited(top128, top256, (int)std::min<size_t>(args.k, std::min(top128.size(), top256.size()))),
-            (float)topk_jaccard_limited      (top128, top256, (int)std::min<size_t>(args.k, std::min(top128.size(), top256.size())))
         };
-        B.lid_probe256 = lid;
-        B.rc_probe256  = rc;
-        B.exp2k_over_k_probe256 = exp2;
         return B;
     };
 
@@ -1180,30 +1163,26 @@ int main(int argc, char** argv){
             // 1) 先算 per-cluster 基础特征 FB（你已有）
             ClusterFeatBundle FB = cluster_features(C, c);
 
-            // 2) 先构造一个 FeatureBank（先只放 base+probe256+recall），用于 A
+            // 2) 先构造一个 FeatureBank（先只放 base+recall），用于 A
             FeatureBank F;
             const std::vector<std::string> base_names = {
-            "cluster_size","cluster_size_log","log1p_cluster_size",
-            "cluster_density","cluster_radius_p50","cluster_radius_p90","radius_skew",
-            "dist_centroid_to_entryL0","entry_dist_norm",
+            "cluster_size","cluster_size_log",
+            "cluster_radius_p50",
+            "dist_centroid_to_entryL0",
             "dist_centroid_top1_smallEF",
-            "overlap128_vs_256","jaccard128_vs_256",
+            "overlap128_vs_256",
             };
             for (size_t i=0;i<base_names.size();++i) F.kv[base_names[i]] = FB.base[i];
-            F.kv["lid_probe256_k10"]                = FB.lid_probe256;
-            F.kv["rc_probe256_k10"]                 = FB.rc_probe256;
-            F.kv["expansion2k_over_k_probe256_k10"] = FB.exp2k_over_k_probe256;
             F.kv["recall_at_k"]                     = args.R_target;
 
             // ---- A: efc
             std::vector<float> xA = featsA_names.empty()
                 ? std::vector<float>{
-                    F.get("cluster_size"), F.get("cluster_size_log"), F.get("log1p_cluster_size"),
-                    F.get("cluster_density"), F.get("cluster_radius_p50"), F.get("cluster_radius_p90"), F.get("radius_skew"),
-                    F.get("dist_centroid_to_entryL0"), F.get("entry_dist_norm"),
+                    F.get("cluster_size"), F.get("cluster_size_log"),
+                    F.get("cluster_radius_p50"),
+                    F.get("dist_centroid_to_entryL0"),
                     F.get("dist_centroid_top1_smallEF"),
-                    F.get("overlap128_vs_256"), F.get("jaccard128_vs_256"),
-                    F.get("lid_probe256_k10"), F.get("rc_probe256_k10"), F.get("expansion2k_over_k_probe256_k10"),
+                    F.get("overlap128_vs_256"),
                     F.get("recall_at_k"),
                 }
                 : vector_from_names(featsA_names, F);
@@ -1220,19 +1199,18 @@ int main(int argc, char** argv){
             float lid_efc=0.f, rc_efc=0.f, exp_efc=1.f;
             compute_lid_rc_expansion_from_top(hnsw, c.data(), dim, topE, 10, lid_efc, rc_efc, exp_efc);
             F.kv["lid_k_efc"]           = lid_efc;
-            F.kv["rc_k_efc"]            = rc_efc;
             F.kv["expand2k_over_k_efc"] = exp_efc;
 
             // ---- B: ef_warm
             std::vector<float> xB = featsB_names.empty()
                 ? std::vector<float>{
-                    F.get("cluster_size"), F.get("cluster_size_log"), F.get("log1p_cluster_size"),
-                    F.get("cluster_density"), F.get("cluster_radius_p50"), F.get("cluster_radius_p90"), F.get("radius_skew"),
-                    F.get("dist_centroid_to_entryL0"), F.get("entry_dist_norm"),
+                    F.get("cluster_size"), F.get("cluster_size_log"),
+                    F.get("cluster_radius_p50"),
+                    F.get("dist_centroid_to_entryL0"),
                     F.get("dist_centroid_top1_smallEF"),
-                    F.get("overlap128_vs_256"), F.get("jaccard128_vs_256"),
-                    F.get("lid_k_efc"), F.get("rc_k_efc"), F.get("expand2k_over_k_efc"),
-                    F.get("efc"), F.get("log_efc"),
+                    F.get("overlap128_vs_256"),
+                    F.get("lid_k_efc"), F.get("expand2k_over_k_efc"),
+                    F.get("efc"),
                     F.get("recall_at_k"),
                 }
                 : vector_from_names(featsB_names, F);
@@ -1247,14 +1225,14 @@ int main(int argc, char** argv){
             // ---- Rank-M: m*，并得到 Lpred（你原逻辑）
             std::vector<float> xR = featsM_names.empty()
                 ? std::vector<float>{
-                    F.get("cluster_size"), F.get("cluster_size_log"), F.get("log1p_cluster_size"),
-                    F.get("cluster_density"), F.get("cluster_radius_p50"), F.get("cluster_radius_p90"), F.get("radius_skew"),
-                    F.get("dist_centroid_to_entryL0"), F.get("entry_dist_norm"),
+                    F.get("cluster_size"), F.get("cluster_size_log"),
+                    F.get("cluster_radius_p50"),
+                    F.get("dist_centroid_to_entryL0"),
                     F.get("dist_centroid_top1_smallEF"),
-                    F.get("overlap128_vs_256"), F.get("jaccard128_vs_256"),
-                    F.get("lid_k_efc"), F.get("rc_k_efc"), F.get("expand2k_over_k_efc"),
+                    F.get("overlap128_vs_256"),
+                    F.get("lid_k_efc"), F.get("expand2k_over_k_efc"),
                     F.get("efc"), F.get("ef_warm"),
-                    F.get("log_efc"), F.get("log_efw"), F.get("efw_over_efc"),
+                    F.get("efw_over_efc"),
                     F.get("recall_at_k"),
                 }
                 : vector_from_names(featsM_names, F);
