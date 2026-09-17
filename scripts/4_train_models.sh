@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 # 训练自适应配置模块（对齐 /data/RoarGraph-main/src/ablation2.sh 的真实流程）
 # 完整链路：
-#   1) 网格搜索生成训练标签        run_train_get_all_k_onlytop
+#   1) 网格搜索生成训练标签        run_train_get_all_k_onlytop   （用训练集）
 #   2) 特征导出/过滤（按 k）        export_feature_csvs_perk.py
-#   3) 特征增强（probe search）     augment_features
+#   3) 特征增强（probe search）     augment_features             （用训练集）
 #   4) 训练 LightGBM 三预测器       train_full_conditional_and_recall_newfeat.py（ablation2 版，对齐论文特征）
-#   5) 推理（评测 Recall@k / QPS）   run_acore
+#   5) 推理（评测 Recall@k / QPS）   run_acore                    （用测试集 或 真实数据集）
+#
+# 训练/测试分离：训练集(200 簇)用于 1~4 步，测试集(50 簇)用于第 5 步推理
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_DIR="${DATA_DIR:-$ROOT/data/clip-webvid-2.5M}"
 INDEX="${INDEX:-$ROOT/data/webvid_base.hnsw}"
-# 训练/推理用的查询前缀。合成数据用 outputs/webvid/s1；真实 topic 数据用 dataset_process 产出的 clip_topic_vectors_topic/s1
-SYN_PREFIX="${SYN_PREFIX:-$ROOT/outputs/webvid/s1}"
+
+# ---- 训练集 / 测试集前缀（合成数据）----
+TRAIN_PREFIX="${TRAIN_PREFIX:-$ROOT/outputs/webvid_train/s1}"
+# 测试集：合成数据用 *_test/s1；真实数据用 dataset_process 产出的 clip_topic_vectors_topic/s1
+TEST_PREFIX="${TEST_PREFIX:-$ROOT/outputs/webvid_test/s1}"
 MODEL_OUT="${MODEL_OUT:-$ROOT/model_out}"
 
 # ---- 与 ablation2.sh 对齐的参数 ----
@@ -32,10 +37,10 @@ RSTARS="${RSTARS:-0.80,0.85,0.88,0.90,0.92,0.94,0.96,0.98}"
 
 mkdir -p "$MODEL_OUT/filtered" "$ROOT/results"
 
-# ---- 1) 生成训练标签（(ef_c,ef_w,L) 网格搜索）----
+# ---- 1) 生成训练标签（(ef_c,ef_w,L) 网格搜索，用训练集）----
 TRAIN_CSV="$MODEL_OUT/train_runs.csv"
 "$ROOT/build/run_train_get_all_k_onlytop" "$DATA_DIR" "$INDEX" \
-  --load_synth_prefix "$SYN_PREFIX" \
+  --load_synth_prefix "$TRAIN_PREFIX" \
   --k "$K" \
   --efc_list 1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000 \
   --efw_list 100,200,300,400,500,600,700,800,900,1000 \
@@ -52,10 +57,10 @@ python "$ROOT/src/export_feature_csvs_perk.py" \
   --gain_eps "$GAIN_EPS" \
   --ks "$KS"
 
-# ---- 3) 特征增强：probe search，输出 *.with_new_feats.csv ----
+# ---- 3) 特征增强：probe search（用训练集），输出 *.with_new_feats.csv ----
 FEAT_CSV="$MODEL_OUT/filtered/filtered_AB_rows_k${K}.csv"
 "$ROOT/build/augment_features" "$DATA_DIR" "$FEAT_CSV" \
-  --load_synth_prefix "$SYN_PREFIX" \
+  --load_synth_prefix "$TRAIN_PREFIX" \
   --index "$INDEX" \
   --k "$K"
 
@@ -65,10 +70,10 @@ python "$ROOT/src/train_full_conditional_and_recall_newfeat.py" \
   --outdir "$MODEL_OUT" \
   --alpha "$ALPHA" --seed "$SEED"
 
-# ---- 5) 推理（评测 Recall@k / QPS，与 ablation2.sh 一致）----
+# ---- 5) 推理（评测 Recall@k / QPS，用测试集 或 真实数据集）----
 "$ROOT/build/run_acore" "$DATA_DIR" "$INDEX" \
   --clusters "$CLUSTERS" --k "$K" --ef "$EF" \
-  --load_synth_prefix "$SYN_PREFIX" \
+  --load_synth_prefix "$TEST_PREFIX" \
   --model_dir "$MODEL_OUT" \
   --model_A model_A_efc_mono.txt \
   --model_B model_B_efw_mono.txt \

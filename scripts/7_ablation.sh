@@ -7,7 +7,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="$ROOT/build/run_acore"
 DATA_DIR="${DATA_DIR:-$ROOT/data/clip-webvid-2.5M}"
 INDEX="${INDEX:-$ROOT/data/webvid_base.hnsw}"
-SYN_PREFIX="${SYN_PREFIX:-$ROOT/outputs/webvid/s1}"
+# 推理用测试集（50 簇）；真实数据用 clip_topic_vectors_topic/s1
+SYN_PREFIX="${SYN_PREFIX:-$ROOT/outputs/webvid_test/s1}"
+# 训练用 CSV：由训练集（200 簇）经 4_train_models.sh 的 1~3 步产出
 CSV="${CSV:-$ROOT/model_out/filtered/filtered_AB_rows_k10.with_new_feats.csv}"
 
 OUTROOT="${OUTROOT:-$ROOT/exp_ablation}"

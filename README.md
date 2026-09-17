@@ -249,18 +249,25 @@ WikiAnswers 同理，直接跑 `encode_wikianswers_clip.py`（内部流式下载
 ./build/tming_build <base.fbin> <out.mrng> <knn.graph> 64 200 1 --tau=0.01
 ```
 
-### Step 2 — 聚类生成合成 OOD batch
+### Step 2 — 聚类生成合成 OOD batch（训练集 + 测试集）
+
+合成数据按**训练集 200 簇 / 测试集 50 簇**拆分（对应论文 `C_train = 200`）。训练集用于
+第 3~4 步（网格搜索、特征增强、训练），测试集（或真实数据）用于第 5 步推理。
 
 ```bash
+# 一键生成（scripts/3_cluster_queries.sh 会生成 *_train(200) 和 *_test(50) 两份）
+bash scripts/3_cluster_queries.sh
+
+# 或手动（以 WebVid 训练集 200 簇为例）
 ./build/make_clustered_queries5 \
-  --real_q data/t2i-10M/query.public.100K.fbin \
-  --out_prefix outputs_t2i_new_train_clusters/s1 \
-  --clusters 30 \
+  --real_q data/clip-webvid-2.5M/query.10k.fbin \
+  --out_prefix outputs/webvid_train/s1 \
+  --clusters 200 \
   --qpc_min 60 --qpc_max 300 --qpc_dist uniform --qpc_logmean 5.3 --qpc_logstd 0.6 \
-  --sigma_deg_min 35 --sigma_deg_max 75 \
+  --sigma_deg_min 5 --sigma_deg_max 35 \
   --theta_min_deg_min 2 --theta_min_deg_max 12 \
   --min_sep_deg 60 \
-  --base data/t2i-10M/base.10M.fbin --k_gt 100 --normalize_base 1 \
+  --base data/clip-webvid-2.5M/base.2.5M.fbin --k_gt 100 --normalize_base 0 \
   --seed 42 --nthreads 24
 ```
 
@@ -305,21 +312,26 @@ python src/train_full_conditional_and_recall_newfeat.py \
 # 产出：model_out_laion/{model_A_efc_mono.txt, model_B_efw_mono.txt, model_rank_m_mono.txt, meta.json}
 ```
 
-> 一键执行：`bash scripts/4_train_models.sh` 已封装上述 4 步（网格搜索 → `export_feature_csvs_perk.py` → `augment_features` → 训练）。
+> 一键执行：`bash scripts/4_train_models.sh` 已封装「网格搜索 → 特征导出 → 特征增强 → 训练 → 推理」全链路，
+> 其中 1~4 步用训练集、第 5 步用测试集（或真实数据）。
 
-### Step 5 — 运行 A-CORE 查询
+### Step 5 — 运行 A-CORE 查询（用测试集 / 真实数据推理）
 
 ```bash
+# 合成测试集（50 簇）推理
 ./build/run_acore data/clip-webvid-2.5M/ data/webvid_base.hnsw \
   --clusters 100 --k 10 --ef 2000 \
-  --load_synth_prefix outputs_webvid_new_train2_test2/s1 \
-  --model_dir model_out_webvid \
+  --load_synth_prefix outputs/webvid_test/s1 \
+  --model_dir model_out \
   --model_A model_A_efc_mono.txt \
   --model_B model_B_efw_mono.txt \
   --model_rank model_rank_m_mono.txt \
   --R_target 0.86:0.02:1 \
   --csv_out webvid_acore.csv \
   --per_query_csv webvid_acore_perq.csv
+
+# 真实数据（topic）推理：把 --load_synth_prefix 换成 dataset_process 产出的前缀即可
+#   --load_synth_prefix dataset_process/clip_topic_vectors_topic/s1
 ```
 
 > 完整可一键执行的流程见 `scripts/`（见下文）。
