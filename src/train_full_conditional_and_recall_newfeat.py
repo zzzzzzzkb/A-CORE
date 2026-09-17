@@ -109,15 +109,7 @@ def add_derived(df: pd.DataFrame) -> pd.DataFrame:
                 df[c] = s
     return df
 
-# --- 新增：回归（带单调） ---
-'''
-    params = dict(
-        objective=("huber" if use_huber else "regression"),
-        n_estimators=1600, learning_rate=0.03,
-        num_leaves=63, subsample=0.9, colsample_bytree=0.9,
-        min_data_in_leaf=48, min_gain_to_split=1e-2,
-        reg_lambda=3.5, max_bin=255, random_state=seed,
-'''
+# --- 回归（带单调）--- 默认 Huber loss（use_huber=True），1200 树 / min_leaf 40
 def lgb_reg_fit(X, y, seed=42, mono=None, use_huber=True):
     params = dict(
         objective=("huber" if use_huber else "regression"),
