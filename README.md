@@ -335,7 +335,7 @@ python src/train_full_conditional_and_recall_newfeat.py \
 #   --load_synth_prefix dataset_process/clip_topic_vectors_topic/s1
 ```
 
-> 完整可一键执行的流程见 `scripts/`（见下文）。
+> 端到端复现用 `scripts/reproduce_all.sh`，开头会做 preflight 检查，缺少数据集/索引会明确报错并提示按 README「数据准备」「Step 1」准备。
 
 ---
 
@@ -351,7 +351,7 @@ python src/train_full_conditional_and_recall_newfeat.py \
 | 运行 A-CORE | `scripts/5_run_acore.sh` |
 | 运行基线 | `scripts/6_run_baselines.sh` |
 | 消融实验 | `scripts/7_ablation.sh` |
-| 一键复现 | `scripts/reproduce_all.sh` |
+| 端到端复现（需先准备数据集与索引） | `scripts/reproduce_all.sh` |
 
 ---
 
