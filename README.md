@@ -299,7 +299,7 @@ python src/export_feature_csvs_perk.py \
 # 4b) 特征增强：probe search，输出 filtered_AB_rows_k10.with_new_feats.csv
 ./build/augment_features data/laion-10M \
   filtered_csvs_laion/filtered_AB_rows_k10.csv \
-  --load_synth_prefix outputs_laion_new_train2/s1 \
+  --load_synth_prefix outputs/laion_train/s1 \
   --index data/laion_base.hnsw \
   --k 10
 
