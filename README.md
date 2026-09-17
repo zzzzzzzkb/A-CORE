@@ -176,7 +176,7 @@ bash prepare_data.sh t2i-10M        # 下载到 ./data/t2i-10M
 
 ### 真实数据集（TREC / WikiAnswers）与格式转换
 
-论文 6.2.2 使用**真实查询 workload**（非合成扰动）。真实数据不是向量，而是**文本查询**，需要先做
+论文 6.2.1 使用**真实查询 workload**（非合成扰动）。真实数据不是向量，而是**文本查询**，需要先做
 「下载原始文本 → 转格式 → CLIP 编码 → 聚类 → 算 GT」这一整条转换，最终得到与合成数据**完全相同**的
 `s1.*` 二进制格式，才能喂给 A-CORE。脚本在 `dataset_process/`：
 
@@ -270,12 +270,14 @@ bash scripts/3_cluster_queries.sh
 
 ### Step 3 — 生成训练标签（离线网格搜索）
 
+网格与论文 6.1 一致：`ef_c ∈ [1000,10000] step500`，`ef_w ∈ [100,1000] step50`，`L ∈ [0.2,3.0] step0.2`。
+
 ```bash
 ./build/run_train_get_all_k_onlytop data/laion-10M/ data/laion_base.hnsw \
-  --load_synth_prefix outputs_laion_new_train_clusters/s1 \
+  --load_synth_prefix outputs/laion_train/s1 \
   --k 10 \
-  --efc_list 1000,1500,2000,...,8000 \
-  --efw_list 100,200,300,...,1000 \
+  --efc_list 1000,1500,2000,...,10000 \
+  --efw_list 100,150,200,...,1000 \
   --L_list 0.2,0.4,0.6,...,3.0 \
   --Rstar 0.9 --delta 0.003 \
   --csv_out train_runs_laion.csv
@@ -314,10 +316,12 @@ python src/train_full_conditional_and_recall_newfeat.py \
 
 ### Step 5 — 运行 A-CORE 查询（用测试集 / 真实数据推理）
 
+> 注意：当 `--load_synth_prefix` 提供 `labels.ibin` 时，实际簇数由 labels 决定，`--clusters` 参数会被忽略（这里传 50 仅为语义一致）。
+
 ```bash
 # 合成测试集（50 簇）推理
 ./build/run_acore data/clip-webvid-2.5M/ data/webvid_base.hnsw \
-  --clusters 100 --k 10 --ef 2000 \
+  --clusters 50 --k 10 --ef 2000 \
   --load_synth_prefix outputs/webvid_test/s1 \
   --model_dir model_out \
   --model_A model_A_efc_mono.txt \

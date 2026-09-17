@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN="$ROOT/build"
 DATA_DIR="${DATA_DIR:-$ROOT/data}"
-SYN_PREFIX="${SYN_PREFIX:-$ROOT/outputs/laion/s1}"
+SYN_PREFIX="${SYN_PREFIX:-$ROOT/outputs/laion_test/s1}"
 
 mkdir -p "$ROOT/results"
 
