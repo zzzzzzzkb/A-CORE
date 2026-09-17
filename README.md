@@ -337,14 +337,8 @@ python src/train_full_conditional_and_recall_newfeat.py \
 | 训练自适应配置 | `scripts/4_train_models.sh` |
 | 运行 A-CORE | `scripts/5_run_acore.sh` |
 | 运行基线 | `scripts/6_run_baselines.sh` |
-| 消融实验 (RQ3) | `scripts/7_ablation.sh` |
+| 消融实验 | `scripts/7_ablation.sh` |
 | 一键复现 | `scripts/reproduce_all.sh` |
-
-论文中的主要结果对应关系：
-
-- **RQ1（Recall@10–QPS 曲线）**：`scripts/5_run_acore.sh` + `scripts/6_run_baselines.sh`
-- **RQ2/RQ3（消融）**：`scripts/7_ablation.sh`（通过训练脚本 `--drop` 参数逐特征消融）
-- **RQ4（自适应配置 vs Ada-ef）**：`run_acore` 的 `--R_target` 网格
 
 ---
 
