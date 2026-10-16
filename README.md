@@ -1,5 +1,7 @@
 # A-CORE: Anchor-based Context Reuse for Efficient Batched Vector Search
 
+[English](README_EN.md) | **简体中文**
+
 Official implementation of **A-CORE**, an anchor-based context reuse framework that accelerates
 batched approximate nearest neighbor (ANN) search by exploiting in-batch query similarity,
 *without* modifying the underlying index structure.
@@ -20,7 +22,8 @@ batch-level features under a target-recall constraint.
 ```
 A-CORE/
 ├── CMakeLists.txt                  # 构建系统
-├── README.md
+├── README.md                       # 中文说明
+├── README_EN.md                    # 英文说明（English）
 ├── requirements.txt                # Python 依赖（训练脚本）
 ├── include/                        # header-only 依赖（已内置）
 │   ├── hnswlib/                    # HNSW 库（header-only）
