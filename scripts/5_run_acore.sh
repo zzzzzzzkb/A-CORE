@@ -9,6 +9,8 @@ DATA_DIR="${DATA_DIR:-$ROOT/data/clip-webvid-2.5M}"
 INDEX="${INDEX:-$ROOT/data/webvid_base.hnsw}"
 TEST_PREFIX="${TEST_PREFIX:-$ROOT/outputs/webvid_test/s1}"
 MODEL_DIR="${MODEL_DIR:-$ROOT/model_out}"
+# 输出文件名标签（用于区分不同数据集/真实数据）
+TAG="${TAG:-webvid}"
 
 CLUSTERS="${CLUSTERS:-100}"
 K="${K:-10}"
@@ -27,7 +29,7 @@ mkdir -p "$ROOT/results"
   --model_B model_B_efw_mono.txt \
   --model_rank model_rank_m_mono.txt \
   --R_target "$R_TARGET" \
-  --csv_out "$ROOT/results/webvid_acore.csv" \
-  --per_query_csv "$ROOT/results/webvid_acore_perq.csv"
+  --csv_out "$ROOT/results/${TAG}_acore.csv" \
+  --per_query_csv "$ROOT/results/${TAG}_acore_perq.csv"
 
-echo "[OK] 结果写入 $ROOT/results/webvid_acore.csv"
+echo "[OK] 结果写入 $ROOT/results/${TAG}_acore.csv"

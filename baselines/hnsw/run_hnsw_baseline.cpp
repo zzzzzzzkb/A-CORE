@@ -177,6 +177,7 @@ struct Args {
     int batch_size = 0;              // max queries per cluster (0 = all)
     std::string gt_row_map_path;     // optional ibin: maps query idx -> GT row idx
     bool use_internal_ids = false;   // compare internal node ids to GT (if labels mismatch)
+    bool build_only = false;         // build index (if missing) then exit, no query eval
 };
 static void usage(){
     std::cout << "Usage:\n  run_hnsw_baseline <data_dir> [index_path]\n"
@@ -190,7 +191,8 @@ static void usage(){
               << "    --clusters=1,2,3                 # only evaluate queries whose cluster id in list\n"
               << "    --batch_size <int>              # evaluate at most this many queries per cluster\n"
               << "    --gt_row_map <path>              # ibin mapping: query index -> GT row index\n"
-              << "    --use_internal_ids               # use internal ids for recall instead of labels\n";
+              << "    --use_internal_ids               # use internal ids for recall instead of labels\n"
+              << "    --build_only                     # build index if missing, then exit (no query eval)\n";
 }
 static Args parse_args(int argc, char** argv){
     if(argc < 2){ usage(); std::exit(1); }
@@ -216,12 +218,13 @@ static Args parse_args(int argc, char** argv){
             else if(key=="batch_size"){ ensure_val(); a.batch_size = std::stoi(val); }
             else if(key=="gt_row_map"){ ensure_val(); a.gt_row_map_path = val; }
             else if(key=="use_internal_ids"){ a.use_internal_ids = true; }
+            else if(key=="build_only"){ a.build_only = true; }
             else { std::cerr<<"Unknown option: "<<s<<"\n"; usage(); std::exit(1); }
         }else{
             std::cerr<<"Unexpected positional arg after data/index paths: "<<s<<"\n"; usage(); std::exit(1);
         }
     }
-    if(a.load_synth_prefix.empty()){ std::cerr<<"ERROR: --load_synth_prefix is required\n"; std::exit(1); }
+    if(a.load_synth_prefix.empty() && !a.build_only){ std::cerr<<"ERROR: --load_synth_prefix is required (unless --build_only)\n"; std::exit(1); }
     if(a.Ks.empty()) a.Ks = {10};
     if(a.EFs.empty()) a.EFs = {200};
     // de-duplicate & sort
@@ -244,6 +247,10 @@ int main(int argc, char** argv){
     }else{
         for(idx_t i=0;i<nb;++i) hnsw.addPoint(xb.data()+i*dim, i);
         hnsw.saveIndex(args.index_path);
+    }
+    if(args.build_only){
+        std::cout << "HNSW index ready: " << args.index_path << " (nb=" << nb << ", dim=" << dim << ")\n";
+        return 0;
     }
 
     // Queries & GT

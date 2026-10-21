@@ -12,13 +12,17 @@ echo "==== 真实数据预处理（依赖 torch / open_clip / requests，见 req
 cd "$DP"
 
 # ---------- TREC Session 2014 ----------
-echo "[TREC] ① XML → JSONL"
-# 需要先下载 TREC Session 2014 数据（https://trec.nist.gov/data/session2014.html）解压出 XML 放到 dataset_process/ 下
-if [ -f sessiontrack2014.xml ]; then
-  python convert_sessiontrack_to_jsonl.py sessiontrack2014.xml
-else
-  echo "[SKIP] 未找到 sessiontrack2014.xml，请先下载 TREC Session 2014 原始 XML 到 $DP/"
+echo "[TREC] ① 下载 + 解压 + XML → JSONL"
+TREC_XML_GZ="$DP/sessiontrack2014.xml.gz"
+TREC_XML="$DP/sessiontrack2014.xml"
+if [ ! -f "$TREC_XML" ]; then
+  if [ ! -f "$TREC_XML_GZ" ]; then
+    echo "  下载 https://trec.nist.gov/data/session/2014/sessiontrack2014.xml.gz ..."
+    wget -q https://trec.nist.gov/data/session/2014/sessiontrack2014.xml.gz -O "$TREC_XML_GZ"
+  fi
+  gunzip -k "$TREC_XML_GZ"
 fi
+python convert_sessiontrack_to_jsonl.py "$TREC_XML"
 
 echo "[TREC] ② CLIP 编码 + KMeans 聚类"
 if [ -f topic_queries.jsonl ]; then

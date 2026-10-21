@@ -12,6 +12,8 @@ OUT_DIR="${OUT_DIR:-$ROOT/outputs}"
 TRAIN_CLUSTERS="${TRAIN_CLUSTERS:-200}"
 TEST_CLUSTERS="${TEST_CLUSTERS:-50}"
 NTHREADS="${NTHREADS:-24}"
+# 可选：只生成指定数据集（webvid / laion / t2i），默认空 = 全部
+DATASET="${DATASET:-}"
 
 mkdir -p "$OUT_DIR"
 
@@ -30,16 +32,22 @@ gen () {
 }
 
 # WebVid（训练 + 测试）
-gen "$DATA_DIR/clip-webvid-2.5M/query.10k.fbin" "$OUT_DIR/webvid_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/clip-webvid-2.5M/base.2.5M.fbin" 0 42
-gen "$DATA_DIR/clip-webvid-2.5M/query.10k.fbin" "$OUT_DIR/webvid_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/clip-webvid-2.5M/base.2.5M.fbin" 0 43
+if [[ -z "$DATASET" || "$DATASET" == "webvid" ]]; then
+  gen "$DATA_DIR/clip-webvid-2.5M/query.10k.fbin" "$OUT_DIR/webvid_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/clip-webvid-2.5M/base.2.5M.fbin" 0 42
+  gen "$DATA_DIR/clip-webvid-2.5M/query.10k.fbin" "$OUT_DIR/webvid_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/clip-webvid-2.5M/base.2.5M.fbin" 0 43
+fi
 
 # LAION（训练 + 测试）
-gen "$DATA_DIR/laion-10M/query.10k.fbin" "$OUT_DIR/laion_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/laion-10M/base.10M.fbin" 0 66
-gen "$DATA_DIR/laion-10M/query.10k.fbin" "$OUT_DIR/laion_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/laion-10M/base.10M.fbin" 0 67
+if [[ -z "$DATASET" || "$DATASET" == "laion" ]]; then
+  gen "$DATA_DIR/laion-10M/query.10k.fbin" "$OUT_DIR/laion_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/laion-10M/base.10M.fbin" 0 66
+  gen "$DATA_DIR/laion-10M/query.10k.fbin" "$OUT_DIR/laion_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/laion-10M/base.10M.fbin" 0 67
+fi
 
 # Text-to-Image（训练 + 测试）
-gen "$DATA_DIR/t2i-10M/query.public.100K.fbin" "$OUT_DIR/t2i_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/t2i-10M/base.10M.fbin" 1 42
-gen "$DATA_DIR/t2i-10M/query.public.100K.fbin" "$OUT_DIR/t2i_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/t2i-10M/base.10M.fbin" 1 43
+if [[ -z "$DATASET" || "$DATASET" == "t2i" ]]; then
+  gen "$DATA_DIR/t2i-10M/query.public.100K.fbin" "$OUT_DIR/t2i_train/s1" "$TRAIN_CLUSTERS" "$DATA_DIR/t2i-10M/base.10M.fbin" 1 42
+  gen "$DATA_DIR/t2i-10M/query.public.100K.fbin" "$OUT_DIR/t2i_test/s1"  "$TEST_CLUSTERS"  "$DATA_DIR/t2i-10M/base.10M.fbin" 1 43
+fi
 
 echo "[OK] 合成 batch 已生成到 $OUT_DIR"
 echo "     训练集：*_train/s1（${TRAIN_CLUSTERS} 簇）"
