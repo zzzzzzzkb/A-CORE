@@ -27,18 +27,19 @@ git clone https://github.com/zzzzzzzkb/A-CORE.git && cd A-CORE
 pip install -r requirements.txt
 
 # 3. Compile C++ core
-mkdir build && cd build
+mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j
+cd ..
 
-# 4. Download WebVid dataset (one-click command)
-mkdir -p data/clip-webvid-2.5M
-wget 'https://zenodo.org/records/11090378/files/clip.webvid.base.2.5M.fbin?download=1' -O data/clip-webvid-2.5M/base.2.5M.fbin
-wget 'https://zenodo.org/records/11090378/files/webvid.query.10k.fbin?download=1' -O data/clip-webvid-2.5M/query.10k.fbin
+# 4. Download datasets + generate synthetic batches
+#    WebVid + LAION + t2i (Zenodo/Yandex) + real TREC/WikiAnswers
+bash scripts/1_prepare_data.sh
+#    single dataset only, e.g.: bash scripts/1_prepare_data.sh webvid
 
 # 5. Run end-to-end core experiment
-cd ..
 bash scripts/reproduce_all.sh --dataset webvid
+#    full pipeline (all datasets): bash scripts/reproduce_all.sh
 ```
 
 > **Note:** `--dataset webvid` runs the A-CORE core experiment for a single dataset. If the HNSW index

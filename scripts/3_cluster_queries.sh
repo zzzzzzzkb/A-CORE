@@ -19,6 +19,11 @@ mkdir -p "$OUT_DIR"
 
 gen () {
   local real_q="$1" out_prefix="$2" clusters="$3" base="$4" normalize_base="$5" seed="$6"
+  # 幂等：已生成则跳过（FORCE=1 可强制重建）
+  if [ "${FORCE:-0}" != "1" ] && [ -s "${out_prefix}.xq.fbin" ] && [ -s "${out_prefix}.gt.ibin" ]; then
+    echo "[SKIP] 已存在: ${out_prefix}.xq.fbin"
+    return 0
+  fi
   "$BIN" \
     --real_q "$real_q" \
     --out_prefix "$out_prefix" \
