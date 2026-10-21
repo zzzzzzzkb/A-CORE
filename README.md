@@ -7,7 +7,7 @@ batched approximate nearest neighbor (ANN) search by exploiting in-batch query s
 *without* modifying the underlying index structure.
 
 > Kaibo Zhang, Zhengxin Li, Wentong Zhang, Lanting Fang, Kaiyu Feng, Miao Xie.
-> *A-CORE: Anchor-based Context Reuse for Efficient Batched Vector Search.* (VLDB)
+> *A-CORE: Anchor-based Context Reuse for Efficient Batched Vector Search.*
 
 A-CORE nominates a representative **anchor** query per batch, runs a single standard search to
 materialize a reusable **Centroid Context**, then warm-starts the remaining queries via
@@ -407,15 +407,4 @@ python src/train_full_conditional_and_recall_newfeat.py \
 | Ablation study | `scripts/7_ablation.sh` |
 | End-to-end reproduction (datasets & indexes must be prepared first) | `scripts/reproduce_all.sh` (optionally `--dataset webvid/laion/t2i/real`) |
 
----
 
-## Citation
-
-```bibtex
-@article{zhang2026acore,
-  title     = {A-CORE: Anchor-based Context Reuse for Efficient Batched Vector Search},
-  author    = {Zhang, Kaibo and Li, Zhengxin and Zhang, Wentong and Fang, Lanting and Feng, Kaiyu and Xie, Miao},
-  journal   = {Proceedings of the VLDB Endowment},
-  year      = {2026}
-}
-```
